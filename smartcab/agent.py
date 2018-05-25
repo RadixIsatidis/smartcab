@@ -47,7 +47,7 @@ class LearningAgent(Agent):
             self.epsilon = 0
             self.alpha = 0
         else:
-            self.epsilon = self.epsilon * 0.99 # math.pow(math.e, -1 * self.alpha * self.trial)
+            self.epsilon = self.epsilon * 0.999   # math.pow(math.e, -1 * self.alpha * self.trial)
 
         return None
 
@@ -71,7 +71,7 @@ class LearningAgent(Agent):
             'left': inputs['left'],
             'right': inputs['right'],
             'oncoming': inputs['oncoming'],
-            'deadline': deadline
+            'deadline': deadline < 5
         }
 
         return state
@@ -159,13 +159,13 @@ class LearningAgent(Agent):
             # update state rewards.
             state_key = self._state_key(state)
 
-            next_state = self.build_state()
+            # next_state = self.build_state()
             # next_state_key = self._state_key(next_state)
             # if state_key != next_state_key:
             #     print('current_state', state_key, 'next_state', next_state_key)
-            self.createQ(next_state)
-            next_reward = self.get_maxQ(next_state)[1]
-            self.Q[state_key][action] = reward + self.alpha * next_reward
+            # self.createQ(next_state)
+            # next_reward = self.get_maxQ(next_state)[1]
+            self.Q[state_key][action] = self.Q[state_key][action] + self.alpha * (reward - self.Q[state_key][action])
             # if self.prev_state is not None:
             #     # update prev state reward using Q.
             #     prev_state_key = self.prev_state['state_key']
@@ -202,7 +202,7 @@ class LearningAgent(Agent):
             value = str(state[key_name])
             key_buf.append(key_name + ":" + value)
 
-        return "-".join(key_buf)
+        return ",".join(key_buf)
 
 
 def run():
@@ -238,7 +238,7 @@ def run():
     #   display      - set to False to disable the GUI if PyGame is enabled
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
-    sim = Simulator(env, update_delay=.001, log_metrics=True, optimized=True)
+    sim = Simulator(env, update_delay=0, display=False, log_metrics=True, optimized=True)
 
     ##############
     # Run the simulator
