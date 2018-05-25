@@ -25,6 +25,7 @@ class LearningAgent(Agent):
         # Set any additional class parameters as needed
         self.state_keys = ['waypoint', 'light', 'left', 'right', 'oncoming', 'deadline']
         self.trial = 0
+        # self.prev_state = None
 
 
     def reset(self, destination=None, testing=False):
@@ -46,8 +47,7 @@ class LearningAgent(Agent):
             self.epsilon = 0
             self.alpha = 0
         else:
-            self.epsilon = math.pow(math.e, -1 * self.alpha * self.trial)
-
+            self.epsilon = self.epsilon * 0.99 # math.pow(math.e, -1 * self.alpha * self.trial)
 
         return None
 
@@ -93,7 +93,9 @@ class LearningAgent(Agent):
             Q_val = given_state[action]
             rewords.append((action, Q_val))
 
-        maxQ = max(rewords, key=lambda item: item[1])
+        highest = max(rewords, key=lambda item: item[1])[1]
+        rest = [v for v in rewords if v[1] == highest]
+        maxQ = random.choice(rest)#max(rewords, key=lambda item: item[1])
 
         return maxQ
 
@@ -154,8 +156,29 @@ class LearningAgent(Agent):
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
 
         if self.learning:
+            # update state rewards.
             state_key = self._state_key(state)
-            self.Q[state_key][action] += self.alpha * reward
+
+            next_state = self.build_state()
+            # next_state_key = self._state_key(next_state)
+            # if state_key != next_state_key:
+            #     print('current_state', state_key, 'next_state', next_state_key)
+            self.createQ(next_state)
+            next_reward = self.get_maxQ(next_state)[1]
+            self.Q[state_key][action] = reward + self.alpha * next_reward
+            # if self.prev_state is not None:
+            #     # update prev state reward using Q.
+            #     prev_state_key = self.prev_state['state_key']
+            #     prev_action = self.prev_state['action']
+            #     prev_reward = self.Q[prev_state_key][prev_action]
+            #
+            #     maxQ = self.get_maxQ(state)
+            #     self.Q[prev_state_key][prev_action] = prev_reward + self.alpha * maxQ[1]
+            # else:
+            #     self.prev_state = {
+            #         'state_key': state_key,
+            #         'action': action
+            #     }
 
         return
 
@@ -192,7 +215,7 @@ def run():
     #   verbose     - set to True to display additional output from the simulation
     #   num_dummies - discrete number of dummy agents in the environment, default is 100
     #   grid_size   - discrete number of intersections (columns, rows), default is (8, 6)
-    env = Environment()
+    env = Environment(verbose=True)
 
     ##############
     # Create the driving agent
@@ -200,7 +223,7 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent, learning=True, alpha=.005)
+    agent = env.create_agent(LearningAgent, learning=True, alpha=.5)
 
     ##############
     # Follow the driving agent
@@ -222,7 +245,7 @@ def run():
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05 
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test=10, tolerance=.01)
+    sim.run(n_test=10, tolerance=.05)
 
 
 if __name__ == '__main__':
