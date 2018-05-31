@@ -23,7 +23,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set any additional class parameters as needed
-        self.state_keys = ['waypoint', 'light', 'left', 'right', 'oncoming', 'deadline']
+        self.state_keys = ['waypoint', 'light', 'left', 'right', 'oncoming']
         self.trial = 0
         # self.prev_state = None
 
@@ -65,15 +65,16 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set 'state' as a tuple of relevant data for the agent        
-        state = {
-            'waypoint': waypoint,
-            'light': inputs['light'],
-            'left': inputs['left'],
-            'right': inputs['right'],
-            'oncoming': inputs['oncoming'],
-            'deadline': deadline < 5
-        }
+        # state = {
+        #     'waypoint': waypoint,
+        #     'light': inputs['light'],
+        #     'left': inputs['left'],
+        #     'right': inputs['right'],
+        #     'oncoming': inputs['oncoming'],
+        #     'deadline': deadline < 5
+        # }
 
+        state = (waypoint, inputs['light'], inputs['left'], inputs['right'], inputs['oncoming'])
         return state
 
 
@@ -86,16 +87,16 @@ class LearningAgent(Agent):
         ###########
         # Calculate the maximum Q-value of all actions for a given state
 
-        state_key = self._state_key(state)
-        given_state = self.Q[state_key]
-        rewords = []
+        # state_key = self._state_key(state)
+        given_state = self.Q[state]
+        rewards = []
         for action in self.valid_actions:
             Q_val = given_state[action]
-            rewords.append((action, Q_val))
+            rewards.append((action, Q_val))
 
-        highest = max(rewords, key=lambda item: item[1])[1]
-        rest = [v for v in rewords if v[1] == highest]
-        maxQ = random.choice(rest)#max(rewords, key=lambda item: item[1])
+        highest = max(rewards, key=lambda item: item[1])[1]
+        rest = [v for v in rewards if v[1] == highest]
+        maxQ = random.choice(rest)
 
         return maxQ
 
@@ -110,10 +111,10 @@ class LearningAgent(Agent):
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
         if self.learning:
-            state_key = self._state_key(state)
-            if state_key not in self.Q:
-                self.Q[state_key] = dict(map((lambda x: (x, 0)), self.valid_actions))
-
+            # state_key = self._state_key(state)
+            if state not in self.Q:
+                # self.Q[state] = dict(map((lambda x: (x, 0)), self.valid_actions))
+                self.Q.setdefault(state, {action: 0.0 for action in self.valid_actions})
         return
 
 
@@ -157,7 +158,7 @@ class LearningAgent(Agent):
 
         if self.learning:
             # update state rewards.
-            state_key = self._state_key(state)
+            # state_key = self._state_key(state)
 
             # next_state = self.build_state()
             # next_state_key = self._state_key(next_state)
@@ -165,7 +166,7 @@ class LearningAgent(Agent):
             #     print('current_state', state_key, 'next_state', next_state_key)
             # self.createQ(next_state)
             # next_reward = self.get_maxQ(next_state)[1]
-            self.Q[state_key][action] = self.Q[state_key][action] + self.alpha * (reward - self.Q[state_key][action])
+            self.Q[state][action] = self.Q[state][action] + self.alpha * (reward - self.Q[state][action])
             # if self.prev_state is not None:
             #     # update prev state reward using Q.
             #     prev_state_key = self.prev_state['state_key']
@@ -196,13 +197,13 @@ class LearningAgent(Agent):
 
         return
 
-    def _state_key(self, state):
-        key_buf = []
-        for key_name in self.state_keys:
-            value = str(state[key_name])
-            key_buf.append(key_name + ":" + value)
-
-        return ",".join(key_buf)
+    # def _state_key(self, state):
+    #     key_buf = []
+    #     for key_name in self.state_keys:
+    #         value = str(state[key_name])
+    #         key_buf.append(key_name + ":" + value)
+    #
+    #     return ",".join(key_buf)
 
 
 def run():
